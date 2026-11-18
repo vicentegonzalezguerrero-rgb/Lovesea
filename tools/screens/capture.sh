@@ -2,14 +2,14 @@
 # Instala la APK en el emulador y saca capturas de las pantallas principales.
 set -x
 OUT=capturas
-mkdir -p $OUT
+rm -rf $OUT && mkdir -p $OUT
 adb root || true
 adb shell cmd alarm set-timezone America/Santiago || adb shell setprop persist.sys.timezone America/Santiago
 adb shell settings put system time_12_24 24
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -W -n cl.lovesea.mareas/.MainActivity
-sleep 8
-adb exec-out screencap -p > $OUT/1-lista.png
+sleep 20   # deja que baje el pronóstico
+adb exec-out screencap -p > $OUT/1-inicio.png
 
 tap_text() {
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null
@@ -28,22 +28,25 @@ else:
 PY
 }
 
-tap_text "Buscar playa o comuna"
-sleep 1
-adb shell input text "conchitas"
-sleep 2
-adb shell input keyevent 111  # cerrar teclado
-sleep 1
-adb exec-out screencap -p > $OUT/2-busqueda.png
 tap_text "Las Conchitas"
 sleep 3
-adb exec-out screencap -p > $OUT/3-detalle.png
-adb shell input swipe 540 1800 540 600 400
+adb exec-out screencap -p > $OUT/2-playa.png
+adb shell input swipe 540 1900 540 900 600
 sleep 2
-adb exec-out screencap -p > $OUT/4-detalle-abajo.png
-adb shell input keyevent 4
+adb exec-out screencap -p > $OUT/3-playa-por-que.png
+adb shell input swipe 540 1900 540 700 600
+sleep 2
+adb exec-out screencap -p > $OUT/4-playa-marea.png
+adb shell input swipe 540 600 540 2000 300
+adb shell input swipe 540 600 540 2000 300
 sleep 1
-adb shell "cmd uimode night yes"
-sleep 3
-adb exec-out screencap -p > $OUT/5-lista-oscuro.png
+tap_text "Natación"
+sleep 2
+adb exec-out screencap -p > $OUT/5-playa-natacion.png
+tap_text "Surf"
+sleep 2
+adb exec-out screencap -p > $OUT/6-playa-surf.png
+adb shell input keyevent 4
+sleep 2
+adb exec-out screencap -p > $OUT/7-inicio-surf.png
 ls -la $OUT
