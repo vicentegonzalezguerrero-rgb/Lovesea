@@ -11,7 +11,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val table = assets.open("tides/valparaiso.csv").use { TideTable.parse(it) }
+        // Si la tabla falta o está dañada, la app abre igual y muestra "sin datos".
+        val table = runCatching { assets.open("tides/valparaiso.csv").use { TideTable.parse(it) } }
+            .getOrElse { TideTable(emptyList()) }
         setContent { LoveseaApp(table) }
     }
 }
