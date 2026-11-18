@@ -78,7 +78,7 @@ def main():
     try:
         das = fetch(META)
         for line in das.splitlines():
-            if "station_name" in line or "latitude" in line.lower() and "String" in line:
+            if any(k in line.lower() for k in ("station", "name", "valpar", "latitude", "longitude")):
                 print("META:", line.strip())
     except Exception as e:  # noqa: BLE001
         print("sin metadatos:", e)
@@ -104,9 +104,14 @@ def main():
     lat_level = utide.reconstruct(tl.values, coef, verbose=False).h.min()
     print(f"Nivel mínimo astronómico (respecto al cero de la estación): {lat_level:.3f} m")
 
-    t = pd.date_range(f"{a.start}-01-01", f"{a.end}-01-01", freq="1min")
-    h = utide.reconstruct(t.values, coef, verbose=False).h - lat_level
-    ex = extremes(t.tz_localize("UTC"), h)
+    # Predicción minuto a minuto por meses para no agotar la memoria.
+    ex = []
+    months = pd.date_range(f"{a.start}-01-01", f"{a.end}-01-01", freq="MS")
+    for m0, m1 in zip(months[:-1], months[1:]):
+        t = pd.date_range(m0 - pd.Timedelta(minutes=2), m1 + pd.Timedelta(minutes=2), freq="1min")
+        h = utide.reconstruct(t.values, coef, verbose=False).h - lat_level
+        ex += [e for e in extremes(t.tz_localize("UTC"), h)
+               if m0.tz_localize("UTC") <= e[0] < m1.tz_localize("UTC")]
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:

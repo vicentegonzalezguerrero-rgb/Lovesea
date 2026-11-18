@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install utide pandas numpy
+      - run: pip install utide "pandas<3" numpy
       - run: python tools/harmonics/derive.py
       - uses: actions/upload-artifact@v4
         with:
