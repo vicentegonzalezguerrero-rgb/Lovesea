@@ -92,10 +92,10 @@ class ForecastRepository(context: Context) {
                     windKn = wh.num("wind_speed_10m", k),
                     gustKn = wh.num("wind_gusts_10m", k),
                     windFromDeg = wh.num("wind_direction_10m", k),
-                    waveM = mk?.let { mh.num("wave_height", it) },
-                    wavePeriodS = mk?.let { mh.num("wave_period", it) },
-                    waveFromDeg = mk?.let { mh.num("wave_direction", it) },
-                    waterTempC = mk?.let { mh.num("sea_surface_temperature", it) },
+                    waveM = mk?.let { mh?.num("wave_height", it) },
+                    wavePeriodS = mk?.let { mh?.num("wave_period", it) },
+                    waveFromDeg = mk?.let { mh?.num("wave_direction", it) },
+                    waterTempC = mk?.let { mh?.num("sea_surface_temperature", it) },
                     isDay = wh.num("is_day", k)?.let { it >= 0.5 },
                 )
             }
