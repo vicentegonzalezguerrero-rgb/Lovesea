@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,18 +53,19 @@ import java.time.Instant
 private fun String.fold(): String =
     Normalizer.normalize(lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{M}"), "")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     table: TideTable,
     forecast: ForecastRepository.Result?,
     loading: Boolean,
+    now: Instant,
     sport: Sport,
     onSport: (Sport) -> Unit,
     onRefresh: () -> Unit,
     onOpen: (Beach) -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    val now = Instant.now()
     val tideNow = table.now(now)
     val shown = Beaches.all.filter {
         query.isBlank() || it.name.fold().contains(query.fold()) || it.comuna.fold().contains(query.fold())
@@ -103,8 +106,9 @@ fun HomeScreen(
             )
         }
 
+        OfflineBanner(forecast, loading)
         Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(ageText(forecast?.fetchedAt, loading), color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
+            Text(ageText(forecast?.fetchedAt, loading, now), color = Muted, fontSize = 12.sp, modifier = Modifier.weight(1f))
             tideNow?.let {
                 Text(
                     "Marea ${if (it.trend == Trend.RISING) "subiendo" else "bajando"} · ${it.heightM.meters()}",
@@ -113,7 +117,9 @@ fun HomeScreen(
             }
         }
 
+        PullToRefreshBox(isRefreshing = loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
         LazyColumn(
+            modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -146,6 +152,7 @@ fun HomeScreen(
                     }
                 }
             }
+        }
         }
     }
 }
