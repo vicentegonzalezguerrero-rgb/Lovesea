@@ -19,7 +19,8 @@ class ForecastRepository(context: Context) {
     private val cacheDir = File(context.filesDir, "forecast").apply { mkdirs() }
     private val zone = ZoneId.of("America/Santiago")
 
-    data class Result(val byBeach: Map<String, BeachForecast>, val fetchedAt: Instant, val fromCache: Boolean)
+    /** [offline] = la última descarga falló y se muestran datos guardados. */
+    data class Result(val byBeach: Map<String, BeachForecast>, val fetchedAt: Instant, val offline: Boolean)
 
     /** Bloqueante: llamar fuera del hilo principal. */
     fun load(beaches: List<Beach>, maxAgeMinutes: Long = 60): Result? {
@@ -29,6 +30,7 @@ class ForecastRepository(context: Context) {
         val cachedAt = stamp.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()?.let(Instant::ofEpochSecond)
         val fresh = cachedAt != null && Instant.now().epochSecond - cachedAt.epochSecond < maxAgeMinutes * 60
 
+        var failed = false
         if (!fresh) {
             val ok = runCatching {
                 val lat = beaches.joinToString(",") { "%.3f".format(java.util.Locale.US, it.lat) }
@@ -47,15 +49,16 @@ class ForecastRepository(context: Context) {
                 marine.writeText(m)
                 stamp.writeText(Instant.now().epochSecond.toString())
             }.isSuccess
+            failed = !ok
             if (!ok && cachedAt == null) return null
         }
         val at = stamp.readText().trim().toLong().let(Instant::ofEpochSecond)
         return runCatching {
-            Result(parse(beaches, wind.readText(), marine.readText(), at), at, fromCache = Instant.now().epochSecond - at.epochSecond > 120)
+            Result(parse(beaches, wind.readText(), marine.readText(), at), at, offline = failed)
         }.getOrNull()
     }
 
-    private fun get(url: String): String {
+    internal fun get(url: String): String {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = 15000
         c.readTimeout = 20000

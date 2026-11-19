@@ -26,7 +26,9 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,18 +63,19 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeachScreen(
     beach: Beach,
     table: TideTable,
     forecast: ForecastRepository.Result?,
     loading: Boolean,
+    now: Instant,
     sport: Sport,
     onSport: (Sport) -> Unit,
     onRefresh: () -> Unit,
     onBack: () -> Unit,
 ) {
-    val now = Instant.now()
     val bf = forecast?.byBeach?.get(beach.id)
     val c = bf?.at(now)?.atShore(beach.seaBearing, beach.exposure)
     val verdict = assess(sport, c, beach.seaBearing)
@@ -87,7 +90,7 @@ fun BeachScreen(
                 }
                 Column(Modifier.weight(1f)) {
                     Text(beach.name, color = Color.White, style = MaterialTheme.typography.titleLarge, maxLines = 1)
-                    Text("${beach.comuna} · ${ageText(forecast?.fetchedAt, loading).lowercase()}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("${beach.comuna} · ${ageText(forecast?.fetchedAt, loading, now).lowercase()}", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 }
                 EmergencyButton()
                 IconButton(onClick = onRefresh) {
@@ -97,6 +100,8 @@ fun BeachScreen(
             SportPicker(sport, onSport, Modifier.padding(start = 16.dp, top = 8.dp))
         }
 
+        OfflineBanner(forecast, loading)
+        PullToRefreshBox(isRefreshing = loading, onRefresh = onRefresh, modifier = Modifier.fillMaxSize()) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -165,7 +170,7 @@ fun BeachScreen(
                 }
             }
 
-            TideSection(table)
+            TideSection(table, now)
 
             Text(
                 "Estimación automática con pronóstico de Open-Meteo y marea calculada para Valparaíso. " +
@@ -174,6 +179,7 @@ fun BeachScreen(
                 color = Muted, fontSize = 12.sp,
             )
             Spacer(Modifier.height(8.dp))
+        }
         }
     }
 }
@@ -258,7 +264,7 @@ private fun HoursStrip(
 }
 
 @Composable
-private fun TideSection(table: TideTable) {
+private fun TideSection(table: TideTable, now: Instant) {
     val today = remember { LocalDate.now(CHILE) }
     var dayOffset by rememberSaveable { mutableLongStateOf(0L) }
     val date = today.plusDays(dayOffset)
@@ -280,7 +286,7 @@ private fun TideSection(table: TideTable) {
         if (curve.isEmpty()) {
             Text("No hay datos de marea para este día.", color = Muted)
         } else {
-            TideChart(curve, if (dayOffset == 0L) Instant.now() else null)
+            TideChart(curve, if (dayOffset == 0L) now else null)
             Spacer(Modifier.height(10.dp))
             events.forEach { e ->
                 Row(Modifier.padding(vertical = 4.dp)) {

@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -79,13 +80,29 @@ fun EmergencyButton() {
     }
 }
 
-fun ageText(at: Instant?, loading: Boolean): String {
+fun ageText(at: Instant?, loading: Boolean, now: Instant = Instant.now()): String {
     if (at == null) return if (loading) "Cargando pronóstico…" else "Sin conexión: solo marea"
-    val m = Duration.between(at, Instant.now()).toMinutes()
+    val m = Duration.between(at, now).toMinutes()
     val age = when {
         m < 2 -> "recién actualizado"
         m < 60 -> "datos de hace $m min"
         else -> "datos de hace ${m / 60} h"
     }
     return if (loading) "$age · actualizando…" else age.replaceFirstChar { it.uppercase() }
+}
+
+@Composable
+fun OfflineBanner(forecast: cl.lovesea.mareas.conditions.ForecastRepository.Result?, loading: Boolean) {
+    val show = !loading && (forecast == null || forecast.offline)
+    if (!show) return
+    Row(
+        Modifier.fillMaxWidth().background(Color(0xFFFFF3C4)).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            if (forecast == null) "Sin internet. Conéctate para ver viento y olas."
+            else "Sin internet. Mostrando datos guardados; revisa el mar antes de entrar.",
+            color = Navy, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+        )
+    }
 }
