@@ -123,7 +123,7 @@ fun BeachScreen(
                     c?.waveM?.let { waveWord(it) } ?: "Sin datos",
                     listOfNotNull(
                         c?.wavePeriodS?.let { "cada ${it.toInt()} s" },
-                        c?.offshoreWaveM?.let { "afuera " + "%.1f".format(it).replace('.', ',') },
+                        c?.offshoreWaveM?.let { "afuera " + "%.1f".format(it).replace('.', ',') + " m" },
                     ).joinToString(" · "),
                     Modifier.weight(1f),
                 )
@@ -204,7 +204,7 @@ private fun Metric(label: String, value: String, unit: String, word: String, sub
             Text(" $unit", fontSize = 13.sp, color = Muted, modifier = Modifier.padding(bottom = 5.dp))
         }
         Text(word, fontWeight = FontWeight.Bold, color = Ink, fontSize = 14.sp)
-        if (sub.isNotBlank()) Text(sub, color = Muted, fontSize = 12.sp, maxLines = 1)
+        if (sub.isNotBlank()) Text(sub, color = Muted, fontSize = 12.sp, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
