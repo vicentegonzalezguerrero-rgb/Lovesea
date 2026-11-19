@@ -14,6 +14,8 @@ data class HourConditions(
     val waveFromDeg: Double?,
     val waterTempC: Double?,
     val isDay: Boolean?,
+    /** Ola mar adentro del modelo, cuando waveM ya fue llevada a la orilla. */
+    val offshoreWaveM: Double? = null,
 )
 
 data class DayLight(val date: java.time.LocalDate, val sunrise: Instant, val sunset: Instant)

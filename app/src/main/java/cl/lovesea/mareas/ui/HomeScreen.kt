@@ -44,6 +44,7 @@ import cl.lovesea.mareas.tide.TideTable
 import cl.lovesea.mareas.tide.Trend
 import cl.lovesea.mareas.verdict.Sport
 import cl.lovesea.mareas.verdict.assess
+import cl.lovesea.mareas.verdict.atShore
 import java.text.Normalizer
 import java.time.Instant
 
@@ -117,7 +118,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(shown, key = { it.id }) { beach ->
-                val c = forecast?.byBeach?.get(beach.id)?.at(now)
+                val c = forecast?.byBeach?.get(beach.id)?.at(now)?.atShore(beach.seaBearing, beach.exposure)
                 val v = assess(sport, c, beach.seaBearing)
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White)

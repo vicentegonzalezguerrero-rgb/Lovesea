@@ -43,6 +43,24 @@ fun offshoreComponent(windKn: Double, windFromDeg: Double, seaBearing: Int): Dou
     return maxOf(0.0, windKn * cos(diff))
 }
 
+/**
+ * Estima la ola en la orilla a partir de la ola mar adentro del modelo:
+ * la reduce según lo protegida que está la playa y según de dónde llega el oleaje
+ * respecto de hacia dónde mira la playa.
+ */
+fun nearshoreWave(offshoreM: Double, waveFromDeg: Double?, seaBearing: Int, exposure: Double): Double {
+    val dir = if (waveFromDeg == null) 0.75 else {
+        val diff = Math.toRadians(waveFromDeg - seaBearing)
+        maxOf(0.25, 0.5 + 0.5 * cos(diff))
+    }
+    return offshoreM * exposure * dir
+}
+
+/** Copia de las condiciones con la ola llevada a la orilla de la playa. */
+fun HourConditions.atShore(seaBearing: Int, exposure: Double): HourConditions =
+    if (waveM == null || offshoreWaveM != null) this
+    else copy(waveM = nearshoreWave(waveM, waveFromDeg, seaBearing, exposure), offshoreWaveM = waveM)
+
 fun windWord(kn: Double): String = when {
     kn < 4 -> "Calma"
     kn < 8 -> "Suave"
@@ -112,6 +130,7 @@ fun assess(sport: Sport, c: HourConditions?, seaBearing: Int): Verdict {
     }
     c.waveM?.let { h ->
         val period = c.wavePeriodS?.let { " · cada ${it.toInt()} s" } ?: ""
+        val off = c.offshoreWaveM?.let { " · mar adentro ${fmt(it)} m" } ?: ""
         val lvl = when (sport) {
             Sport.SUP -> band(h, 0.5, 0.9, 1.3)
             Sport.SWIM -> band(h, 0.5, 0.9, 1.3)
@@ -125,7 +144,7 @@ fun assess(sport: Sport, c: HourConditions?, seaBearing: Int): Verdict {
                 else -> Level.RED
             }
         }
-        factors += Factor("Olas", "${fmt(h)} m", "${waveWord(h)}$period", lvl)
+        factors += Factor("Olas en la orilla", "${fmt(h)} m", "${waveWord(h)}$period$off", lvl)
     }
     if (sport == Sport.SURF) c.wavePeriodS?.let { p ->
         val lvl = when {
