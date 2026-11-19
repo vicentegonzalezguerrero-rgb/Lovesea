@@ -55,4 +55,18 @@ class VerdictTest {
         assertEquals("SW", compass(225.0))
         assertEquals("N", compass(355.0))
     }
+
+    @Test fun shelteredBeachGetsSmallerWaves() {
+        // Las Conchitas: mira al NW (300°), expuesta 0,75; oleaje del SW (225°).
+        val shore = nearshoreWave(1.3, 225.0, 300, 0.75)
+        assertTrue("ola en la orilla $shore", shore in 0.5..0.7)
+        // Playa abierta con oleaje de frente no se reduce.
+        assertEquals(1.3, nearshoreWave(1.3, 270.0, 270, 1.0), 1e-9)
+    }
+
+    @Test fun atShoreKeepsOffshoreValueAndIsIdempotent() {
+        val c = hour(wave = 1.3).copy(waveFromDeg = 225.0).atShore(300, 0.75)
+        assertEquals(1.3, c.offshoreWaveM!!, 1e-9)
+        assertEquals(c, c.atShore(300, 0.75))
+    }
 }

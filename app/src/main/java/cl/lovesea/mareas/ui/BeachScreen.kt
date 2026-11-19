@@ -52,6 +52,7 @@ import cl.lovesea.mareas.tide.Trend
 import cl.lovesea.mareas.verdict.Level
 import cl.lovesea.mareas.verdict.Sport
 import cl.lovesea.mareas.verdict.assess
+import cl.lovesea.mareas.verdict.atShore
 import cl.lovesea.mareas.verdict.compass
 import cl.lovesea.mareas.verdict.score
 import cl.lovesea.mareas.verdict.waveWord
@@ -73,7 +74,7 @@ fun BeachScreen(
 ) {
     val now = Instant.now()
     val bf = forecast?.byBeach?.get(beach.id)
-    val c = bf?.at(now)
+    val c = bf?.at(now)?.atShore(beach.seaBearing, beach.exposure)
     val verdict = assess(sport, c, beach.seaBearing)
     val tideNow = table.now(now)
 
@@ -120,7 +121,10 @@ fun BeachScreen(
                     "OLAS",
                     c?.waveM?.let { "%.1f".format(it).replace('.', ',') } ?: "–", "m",
                     c?.waveM?.let { waveWord(it) } ?: "Sin datos",
-                    c?.wavePeriodS?.let { "cada ${it.toInt()} s" } ?: "",
+                    listOfNotNull(
+                        c?.wavePeriodS?.let { "cada ${it.toInt()} s" },
+                        c?.offshoreWaveM?.let { "afuera " + "%.1f".format(it).replace('.', ',') },
+                    ).joinToString(" · "),
                     Modifier.weight(1f),
                 )
                 Metric(
@@ -214,7 +218,7 @@ private fun HoursStrip(
     val start = now.truncatedTo(ChronoUnit.HOURS)
     val hours = bf.hours.filter { !it.time.isBefore(start) }.take(24)
     if (hours.isEmpty()) return
-    val verdicts = hours.map { it to assess(sport, it, beach.seaBearing) }
+    val verdicts = hours.map { it.atShore(beach.seaBearing, beach.exposure) }.map { it to assess(sport, it, beach.seaBearing) }
     val today = LocalDate.now(CHILE)
     val best = verdicts
         .filter { (h, _) -> h.time.atZone(CHILE).toLocalDate() == today && h.isDay != false }
@@ -249,7 +253,7 @@ private fun HoursStrip(
             }
         }
         Spacer(Modifier.height(4.dp))
-        Text("Altura de ola en metros bajo cada hora.", fontSize = 11.sp, color = Muted)
+        Text("Altura de ola en la orilla, en metros.", fontSize = 11.sp, color = Muted)
     }
 }
 
